@@ -1,5 +1,5 @@
-import Notes from '@/src/pages/Notes'
-import ProtectedRoute from '@/src/components/ProtectedRoute'
+import Notes from '@/pages/Notes'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 export default function NotesPage() {
   return (
