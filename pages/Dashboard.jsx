@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import WeatherWidget from "../components/WeatherWidget";
-import RecentNews from "../components/RecentNews";
-import CalendarWidget from "../components/CalendarWidget";
+import WeatherWidget from "@/components/WeatherWidget";
+import RecentNews from "@/components/RecentNews";
+import CalendarWidget from "@/components/CalendarWidget";
 
 function Dashboard() {
   const [userName, setUserName] = useState("User");
