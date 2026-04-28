@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import api from "../services/api";
+import api from "@/services/api";
 import WeatherWidget from "@/components/WeatherWidget";
 import RecentNews from "@/components/RecentNews";
 import CalendarWidget from "@/components/CalendarWidget";
