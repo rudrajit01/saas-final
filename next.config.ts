@@ -3,8 +3,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   turbopack: {
-    // project root যেখানে next.config.ts আছে, সেখানে থাকবে
     root: path.resolve(__dirname),
+  },
+  // 👇 rewrites যোগ করুন
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://localhost:5000/api/:path*", // আপনার ব্যাকএন্ডের ঠিকানা
+      },
+    ];
   },
 };
 

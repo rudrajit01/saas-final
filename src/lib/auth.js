@@ -1,17 +1,28 @@
-import { SignJWT, jwtVerify } from "jose";
+import jwt from "jsonwebtoken";
 
-const secretKey = process.env.JWT_SECRET;
-const key = new TextEncoder().encode(secretKey);
+const JWT_SECRET = process.env.JWT_SECRET;
 
-export async function createToken(payload) {
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d")
-    .sign(key);
+export function generateUserToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 }
 
-export async function verifyToken(token) {
-  const { payload } = await jwtVerify(token, key);
-  return payload;
+export function verifyUserToken(token) {
+  return jwt.verify(token, JWT_SECRET);
+}
+
+export function extractToken(req) {
+  const authHeader = req.headers.get("authorization");
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
+  }
+
+  const cookieHeader = req.headers.get("cookie");
+  if (!cookieHeader) return null;
+
+  const tokenCookie = cookieHeader
+    .split("; ")
+    .find((row) => row.startsWith("token="));
+
+  return tokenCookie ? tokenCookie.split("=")[1] : null;
 }

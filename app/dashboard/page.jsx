@@ -1,58 +1,32 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-
 export default function DashboardPage() {
-  const router = useRouter();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const res = await fetch("/api/me");
-
-      if (!res.ok) {
-        router.push("/login");
-        return;
-      }
-
-      const data = await res.json();
-      setUser(data.user);
-    };
-
-    fetchUser();
-  }, [router]);
-
-  const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST" });
-    localStorage.removeItem("user");
-    router.push("/login");
-    router.refresh();
-  };
-
   return (
-    <div className="dashboard-page">
-      <aside className="dashboard-sidebar">
-        <h2 className="dashboard-logo">My Productivity</h2>
+    <div className="space-y-6">
+      <div>
+        <p className="text-sm text-slate-400">Welcome back</p>
+        <h1 className="text-3xl font-bold text-white">Overview</h1>
+      </div>
 
-        <div className="dashboard-user-box">
-          <p>{user?.name || "User"}</p>
-          <span>{user?.email || "user@email.com"}</span>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-5">
+          <p className="text-sm text-slate-400">Total Tasks</p>
+          <h2 className="mt-2 text-3xl font-bold text-white">24</h2>
         </div>
 
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
-        </button>
-      </aside>
-
-      <main className="dashboard-main">
-        <div className="dashboard-topbar">
-          <div>
-            <p className="dashboard-welcome">Welcome back</p>
-            <h1>Overview</h1>
-          </div>
+        <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-5">
+          <p className="text-sm text-slate-400">Completed</p>
+          <h2 className="mt-2 text-3xl font-bold text-white">18</h2>
         </div>
-      </main>
+
+        <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-5">
+          <p className="text-sm text-slate-400">Projects</p>
+          <h2 className="mt-2 text-3xl font-bold text-white">5</h2>
+        </div>
+
+        <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/70 p-5">
+          <p className="text-sm text-slate-400">Focus Hours</p>
+          <h2 className="mt-2 text-3xl font-bold text-white">6.5h</h2>
+        </div>
+      </div>
     </div>
   );
 }

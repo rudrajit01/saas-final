@@ -1,34 +1,27 @@
-import { NextResponse } from "next/server";
+// app/api/me/route.js
 import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const token = cookies().get("token")?.value;
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get("user");
 
-    if (!token) {
+    if (!userCookie) {
       return NextResponse.json(
-        { message: "Unauthorized" },
+        { message: "User not logged in" },
         { status: 401 }
       );
     }
 
-    const payload = await verifyToken(token);
-
     return NextResponse.json(
-      {
-        user: {
-          id: payload.id,
-          name: payload.name,
-          email: payload.email,
-        },
-      },
+      { user: JSON.parse(userCookie.value) },
       { status: 200 }
     );
   } catch (error) {
     return NextResponse.json(
-      { message: "Invalid or expired token" },
-      { status: 401 }
+      { message: "Invalid user data" },
+      { status: 500 }
     );
   }
 }

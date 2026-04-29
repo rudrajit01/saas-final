@@ -7,13 +7,14 @@ import Link from "next/link";
 export default function DashboardShell({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+
   const [user, setUser] = useState(null);
   const [darkMode, setDarkMode] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-
     if (savedTheme) {
       setDarkMode(savedTheme === "dark");
     }
@@ -24,18 +25,25 @@ export default function DashboardShell({ children }) {
       try {
         const res = await fetch("/api/me", {
           method: "GET",
+          credentials: "include",
           cache: "no-store",
+          headers: {
+            Accept: "application/json",
+          },
         });
 
         if (!res.ok) {
-          router.push("/login");
+          router.replace("/login");
+          router.refresh();
           return;
         }
 
         const data = await res.json();
-        setUser(data.user);
+        setUser(data?.user || null);
       } catch (error) {
-        router.push("/login");
+        console.error("Failed to fetch user:", error);
+        router.replace("/login");
+        router.refresh();
       } finally {
         setLoading(false);
       }
@@ -58,12 +66,25 @@ export default function DashboardShell({ children }) {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/logout", {
+      setLoggingOut(true);
+
+      const res = await fetch("/api/logout", {
         method: "POST",
+        credentials: "include",
+        cache: "no-store",
       });
-      router.push("/login");
+
+      if (!res.ok) {
+        throw new Error("Logout failed");
+      }
+
+      setUser(null);
+      router.replace("/login");
+      router.refresh();
     } catch (error) {
-      console.error("Logout failed");
+      console.error("Logout failed:", error);
+    } finally {
+      setLoggingOut(false);
     }
   };
 
@@ -110,12 +131,18 @@ export default function DashboardShell({ children }) {
         <button
           className="theme-toggle-btn"
           onClick={() => setDarkMode(!darkMode)}
+          type="button"
         >
           {darkMode ? "Switch to Light" : "Switch to Dark"}
         </button>
 
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
+        <button
+          className="logout-btn"
+          onClick={handleLogout}
+          type="button"
+          disabled={loggingOut}
+        >
+          {loggingOut ? "Logging out..." : "Logout"}
         </button>
       </aside>
 
