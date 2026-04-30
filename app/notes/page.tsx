@@ -3,11 +3,17 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 
+interface Note {
+  _id: string;
+  content: string;
+  createdAt?: string;
+}
+
 export default function NotesPage() {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchNotes();
@@ -18,7 +24,7 @@ export default function NotesPage() {
       setLoading(true);
       const res = await api.get("/notes");
       setNotes(res.data?.notes || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch notes:", err);
       setError(err.response?.data?.message || "Failed to load notes");
     } finally {
@@ -30,31 +36,32 @@ export default function NotesPage() {
     if (!newNote.trim()) return;
     try {
       const res = await api.post("/notes", { content: newNote });
-      setNotes([...notes, res.data]);
+      setNotes([...notes, res.data as Note]);
       setNewNote("");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to add note:", err);
       setError(err.response?.data?.message || "Failed to add note");
     }
   };
 
-  const deleteNote = async (id) => {
+  const deleteNote = async (id: string) => {
     try {
       await api.delete(`/notes/${id}`);
       setNotes(notes.filter((n) => n._id !== id));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete note:", err);
+      setError(err.response?.data?.message || "Failed to delete note");
     }
   };
 
   if (loading) {
-    return <div>Loading notes...</div>;
+    return <div className="loading-spinner">Loading notes...</div>;
   }
 
   return (
     <div className="notes-page">
       <h2>My Notes</h2>
-      
+
       <div className="add-note">
         <input
           type="text"
@@ -65,7 +72,7 @@ export default function NotesPage() {
         <button onClick={addNote}>Add Note</button>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error-message">{error}</p>}
 
       <div className="notes-list">
         {notes.length === 0 ? (
