@@ -5,15 +5,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  // 👇 rewrites যোগ করুন
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:5000/api/:path*", // আপনার ব্যাকএন্ডের ঠিকানা
-      },
-    ];
-  },
+  // Vercel handles API routes via serverless functions
+  // No rewrites needed for production
 };
 
 export default nextConfig;

@@ -13,7 +13,11 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      default: null, // Optional for Firebase OAuth users
+    },
+    firebaseUid: {
+      type: String,
+      default: null, // For Firebase OAuth users
     },
     resetPasswordToken: {
       type: String,
