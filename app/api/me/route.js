@@ -1,4 +1,4 @@
-// app/api/me/route.js
+// app/api/me/route.ts
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase-admin";
@@ -10,13 +10,10 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
     
-    // Check for Firebase session cookie first (Google OAuth)
     const sessionCookie = cookieStore.get("session")?.value;
-    
-    // Check for JWT token cookie (email/password login)
     const tokenCookie = cookieStore.get("token")?.value;
 
-    // Try Firebase session first
+    // 1️⃣ Firebase সেশন কুকি চেক করুন (Google OAuth)
     if (sessionCookie) {
       try {
         const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
@@ -39,19 +36,24 @@ export async function GET() {
           );
         }
       } catch (firebaseError) {
-        // Continue to check JWT token
+        // Firebase সেশন ব্যর্থ হলে JWT ট্রাই করবে
       }
     }
 
-    // Try JWT token (email/password login)
+    // 2️⃣ JWT টোকেন চেক করুন (ইমেইল/পাসওয়ার্ড লগইন)
     if (tokenCookie) {
+      // 🔑 এনভায়রনমেন্ট ভেরিয়েবল চেক – এটাই ফিক্স
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) {
+        console.error("JWT_SECRET environment variable is missing");
+        return NextResponse.json(
+          { message: "Server configuration error" },
+          { status: 500 }
+        );
+      }
+
       try {
-        const JWT_SECRET = process.env.JWT_SECRET;
-        if (!JWT_SECRET) {
-          return NextResponse.json({ message: "Server misconfigured" }, { status: 500 });
-        }
-        
-        const decoded = jwt.verify(tokenCookie, JWT_SECRET);
+        const decoded = jwt.verify(tokenCookie, JWT_SECRET) as { userId: string };
         const userId = decoded.userId;
 
         await connectDB();
@@ -70,10 +72,11 @@ export async function GET() {
           );
         }
       } catch (jwtError) {
-        // Token invalid or expired
+        // টোকেন অবৈধ বা মেয়াদউত্তীর্ণ
       }
     }
 
+    // কোনো সেশনই বৈধ নয়
     return NextResponse.json(
       { message: "Not authenticated" },
       { status: 401 }
