@@ -1,16 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
 
 interface Task {
   _id: string;
   title: string;
-  description?: string;
   completed: boolean;
-  priority?: 'low' | 'medium' | 'high';
-  dueDate?: string;
 }
+
+// লোকাল স্টোরেজ হেল্পার ফাংশন
+const getTasksFromStorage = (): Task[] => {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem("my_tasks");
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveTasksToStorage = (tasks: Task[]) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("my_tasks", JSON.stringify(tasks));
+  }
+};
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -18,95 +27,103 @@ export default function TasksPage() {
   const [newTask, setNewTask] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // tasks পরিবর্তন হলে স্টোরেজ আপডেট হবে
   useEffect(() => {
-    fetchTasks();
+    const storedTasks = getTasksFromStorage();
+    setTasks(storedTasks);
+    setLoading(false);
   }, []);
 
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/tasks");
-      setTasks(res.data?.tasks || []);
-    } catch (err: any) {
-      console.error("Failed to fetch tasks:", err);
-      setError(err.response?.data?.message || "Failed to load tasks");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!loading) {
+      saveTasksToStorage(tasks);
     }
-  };
+  }, [tasks, loading]);
 
-  const addTask = async () => {
+  const addTask = () => {
     if (!newTask.trim()) return;
     try {
-      const res = await api.post("/tasks", { title: newTask });
-      setTasks([...tasks, res.data as Task]);
+      const newId = Date.now().toString();
+      const newTaskObj: Task = {
+        _id: newId,
+        title: newTask.trim(),
+        completed: false,
+      };
+      setTasks([newTaskObj, ...tasks]);
       setNewTask("");
-    } catch (err: any) {
-      console.error("Failed to add task:", err);
-      setError(err.response?.data?.message || "Failed to add task");
+      setError(null);
+    } catch (err) {
+      setError("টাস্ক যোগ করতে ব্যর্থ হয়েছে");
     }
   };
 
-  const toggleTask = async (id: string) => {
-    const task = tasks.find(t => t._id === id);
-    if (!task) return;
-
-    try {
-      const res = await api.put(`/tasks/${id}`, { completed: !task.completed });
-      setTasks(tasks.map(t => (t._id === id ? (res.data as Task) : t)));
-    } catch (err: any) {
-      console.error("Failed to update task:", err);
-      setError(err.response?.data?.message || "Failed to update task");
-    }
+  const toggleTask = (id: string) => {
+    setTasks(
+      tasks.map((task) =>
+        task._id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
   };
 
-  const deleteTask = async (id: string) => {
-    try {
-      await api.delete(`/tasks/${id}`);
-      setTasks(tasks.filter((t) => t._id !== id));
-    } catch (err: any) {
-      console.error("Failed to delete task:", err);
-      setError(err.response?.data?.message || "Failed to delete task");
-    }
+  const deleteTask = (id: string) => {
+    setTasks(tasks.filter((task) => task._id !== id));
   };
 
-  if (loading) {
-    return <div className="loading-spinner">Loading tasks...</div>;
-  }
+  if (loading) return <div>লোড হচ্ছে...</div>;
 
   return (
-    <div className="tasks-page">
-      <h2>My Tasks</h2>
-
-      <div className="add-task">
+    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
+      <h2>📋 আমার কাজের তালিকা</h2>
+      <div style={{ marginBottom: "20px" }}>
         <input
           type="text"
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
-          placeholder="Add a new task..."
+          placeholder="নতুন টাস্ক লিখুন..."
+          style={{ padding: "8px", marginRight: "8px", width: "250px" }}
         />
-        <button onClick={addTask}>Add Task</button>
+        <button onClick={addTask} style={{ padding: "8px 16px" }}>
+          যোগ করুন
+        </button>
       </div>
-
-      {error && <p className="error-message">{error}</p>}
-
-      <div className="tasks-list">
-        {tasks.length === 0 ? (
-          <p>No tasks yet. Add your first task!</p>
-        ) : (
-          tasks.map((task) => (
-            <div key={task._id} className={`task-card ${task.completed ? "completed" : ""}`}>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {tasks.length === 0 ? (
+        <p>কোনো টাস্ক নেই। উপরে যোগ করুন।</p>
+      ) : (
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {tasks.map((task) => (
+            <li
+              key={task._id}
+              style={{
+                marginBottom: "10px",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
               <input
                 type="checkbox"
-                checked={task.completed || false}
+                checked={task.completed}
                 onChange={() => toggleTask(task._id)}
               />
-              <span>{task.title}</span>
-              <button onClick={() => deleteTask(task._id)}>Delete</button>
-            </div>
-          ))
-        )}
-      </div>
+              <span
+                style={{
+                  textDecoration: task.completed ? "line-through" : "none",
+                  flex: 1,
+                }}
+              >
+                {task.title}
+              </span>
+              <button
+                onClick={() => deleteTask(task._id)}
+                style={{ backgroundColor: "#ff4444", color: "white", border: "none", padding: "4px 12px", borderRadius: "4px" }}
+              >
+                মুছুন
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
